@@ -1,0 +1,11 @@
+
+
+spring:
+  application:
+    name: var-checking
+  main:
+    banner-mode: off
+server:
+  address: 127.0.0.1
+  port: 9191
+
