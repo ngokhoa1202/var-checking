@@ -21,6 +21,7 @@ dependencies {
 //    implementation("org.springframework.boot:spring-boot-starter-batch")
 //    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.1")
     implementation("org.apache.pdfbox:pdfbox:2.0.1")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
