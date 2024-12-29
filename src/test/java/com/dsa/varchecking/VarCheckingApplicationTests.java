@@ -2,6 +2,7 @@ package com.dsa.varchecking;
 
 import algorithm.Trie;
 import entity.Statement;
+import entity.StatementRequest;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
@@ -13,9 +14,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.netty.http.client.HttpClient;
 
 import java.io.File;
@@ -35,7 +36,11 @@ class VarCheckingApplicationTests {
 
   private final String URL = "https://api.tracuusaoke.com/search";
 
-  private final int PAGE_LIMIT = 10; // 13809
+  private final int PAGE_LIMIT = 1000; // 13809
+
+  private final int TIMEOUT = 5000;
+
+  private final int BUFFER_SIZE = 20;
 
   @Test
   void testTrie_GivenSimplePatterns() {
@@ -74,52 +79,24 @@ class VarCheckingApplicationTests {
 
   @Test
   void testFetchVarCheckingData_GivenURL() {
-
-
     Trie trie = new Trie();
-    String pattern = "NGUYEN VAN NAM";
-    trie.addPattern(pattern);
+    // List of patterns
+    List<String> patterns = List.of("NGUYEN VAN NAM");
+    for (String pattern : patterns) {
+      trie.addPattern(pattern);
+    }
 
-    List<Map<String,List<Integer>>> results = new ArrayList<>();
+    // Build failure links
+    trie.buildFailureLinks();
 
-    IntStream.rangeClosed(1, 1)
-      .boxed()
-      .parallel()
-      .forEach((page) -> {
-        HttpClient httpClient = HttpClient.create()
-          .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-          .responseTimeout(Duration.ofMillis(5000))
-          .doOnConnected(conn ->
-            conn.addHandlerLast(new ReadTimeoutHandler(5000, TimeUnit.MILLISECONDS))
-              .addHandlerLast(new WriteTimeoutHandler(5000, TimeUnit.MILLISECONDS)))
-          .headers((headers) ->{
-            headers.add("Content-Type", "application/json");
-            headers.add("Accept", "application/json");
-          })
-          .baseUrl(String.format("%s?page=%s", this.URL, page.toString()));
+    // Text to search
+    String text = "MBVCB.7026357059.Nguyen Thu Thuy - Ung ho dong bao Lu Lut.CT tu NGUYEN VAN NAM toi MAT TRAN TO QUOC VN - BAN CUU TRO TW";
+    Map<String, List<Integer>> results = trie.search(text);
 
-        WebClient.builder()
-          .clientConnector(new ReactorClientHttpConnector(httpClient))
-          .build()
-          .get()
-          .exchangeToMono(response -> {
-
-            return response.bodyToMono(new ParameterizedTypeReference<List<Statement>>() {});
-          })
-          .subscribe((statements) -> {
-            statements.forEach(
-              (statement) -> {
-                Map<String, List<Integer>> result = trie.search(statement.note());
-                results.add(result);
-              }
-            );
-          });
-      });
+    // Print results
     System.out.println("Match results:");
-    for (var result: results) {
-      for (Map.Entry<String, List<Integer>> entry : result.entrySet()) {
-        System.out.printf("Pattern '%s' found at positions: %s%n", entry.getKey(), entry.getValue());
-      }
+    for (Map.Entry<String, List<Integer>> entry : results.entrySet()) {
+      System.out.printf("Pattern '%s' found at positions: %s%n", entry.getKey(), entry.getValue());
     }
   }
 
