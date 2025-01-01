@@ -15,7 +15,7 @@ public class Trie {
       current.children.putIfAbsent(ch, new Node());
       current = current.children.get(ch);
     }
-    current.output.add(pattern);
+    current.output.add(pattern); // chuoi hien thoi di duoc
   }
 
   public void buildFailureLinks() {
